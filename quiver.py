@@ -1,4 +1,4 @@
-from sympy import Expr, Integer, Rational, Symbol
+from sympy import Expr, Integer, Rational, Symbol, simplify
 from vector import *
 
 
@@ -55,9 +55,14 @@ class Quiver:
     num_vertices: int
     edges: list[list[int]]
 
+    cache_delta: dict[str, Expr]
+    cache_epsilon: dict[str, Expr]
+
     def __init__(self, num_vertices: int, edges: list[list[int]]) -> None:
         self.num_vertices = num_vertices
         self.edges = edges
+        self.cache_delta = {}
+        self.cache_epsilon = {}
 
     def chi(self, d1: list[int], d2: list[int]) -> int:
         result = dot_product(d1, d2)
@@ -148,6 +153,11 @@ class Quiver:
         return results
 
     def delta(self, stability: list[int], dim_vector: list[int]) -> Expr:
+        key = str((stability, dim_vector))
+        cache = self.cache_delta.get(key)
+        if cache:
+            return cache
+
         result = Integer(0)
         wcf_terms = self.enumerate_wcf_terms(stability, dim_vector)
         L = Symbol('L')
@@ -163,9 +173,16 @@ class Quiver:
 
             result += expr
 
+        result = simplify(result)
+        self.cache_delta[key] = result
         return result
 
     def epsilon(self, stability: list[int], dim_vector: list[int]) -> Expr:
+        key = str((stability, dim_vector))
+        cache = self.cache_epsilon.get(key)
+        if cache:
+            return cache
+
         result = Integer(0)
         wcf_terms = self.enumerate_wcf_terms(
             stability, dim_vector, equal_slope=True)
@@ -182,6 +199,8 @@ class Quiver:
 
             result += expr
 
+        result = simplify(result)
+        self.cache_epsilon[key] = result
         return result
 
 
@@ -191,18 +210,23 @@ class SymmetricQuiver(Quiver):
     vertex_sign: list[int]
     edge_sign: list[int]
 
+    cache_delta_sd: dict[str, Expr]
+    cache_epsilon_sd: dict[str, Expr]
+
     def __init__(
             self, num_vertices: int, edges: list[list[int]],
             vertex_involution: list[int],
             edge_involution: list[int],
             vertex_sign: list[int] | None = None,
             edge_sign: list[int] | None = None) -> None:
-        self.num_vertices = num_vertices
-        self.edges = edges
+        super().__init__(num_vertices, edges)
+        
         self.vertex_involution = vertex_involution
         self.edge_involution = edge_involution
         self.vertex_sign = vertex_sign or [1] * num_vertices
         self.edge_sign = edge_sign or [1] * len(edges)
+        self.cache_delta_sd = {}
+        self.cache_epsilon_sd = {}
 
     def symmetrize(self, dim_vector: list[int]) -> list[int]:
         n = self.num_vertices
@@ -336,6 +360,11 @@ class SymmetricQuiver(Quiver):
         return result
 
     def delta_sd(self, stability: list[int], dim_vector: list[int]) -> Expr:
+        key = str((stability, dim_vector))
+        cache = self.cache_delta_sd.get(key)
+        if cache:
+            return cache
+
         result = Integer(0)
         wcf_terms = self.enumerate_sd_wcf_terms(stability, dim_vector)
         L = Symbol('L')
@@ -354,9 +383,16 @@ class SymmetricQuiver(Quiver):
 
             result += expr
 
+        result = simplify(result)
+        self.cache_delta_sd[key] = result
         return result
 
     def epsilon_sd(self, stability: list[int], dim_vector: list[int]) -> Expr:
+        key = str((stability, dim_vector))
+        cache = self.cache_epsilon_sd.get(key)
+        if cache:
+            return cache
+
         result = Integer(0)
         wcf_terms = self.enumerate_sd_wcf_terms(
             stability, dim_vector, equal_slope=True)
@@ -376,4 +412,6 @@ class SymmetricQuiver(Quiver):
 
             result += expr
 
+        result = simplify(result)
+        self.cache_epsilon_sd[key] = result
         return result
