@@ -220,7 +220,7 @@ class SymmetricQuiver(Quiver):
             vertex_sign: list[int] | None = None,
             edge_sign: list[int] | None = None) -> None:
         super().__init__(num_vertices, edges)
-        
+
         self.vertex_involution = vertex_involution
         self.edge_involution = edge_involution
         self.vertex_sign = vertex_sign or [1] * num_vertices
@@ -338,7 +338,8 @@ class SymmetricQuiver(Quiver):
         j = 0
         for e in self.edges:
             if self.edge_involution[j] == j:
-                freedom += int(d[e[1]] * (d[e[1]] + self.edge_sign[j]) / 2)
+                freedom += int(d[e[1]] * (d[e[1]] +
+                               self.edge_sign[j] * self.vertex_sign[e[1]]) / 2)
             elif self.edge_involution[j] > j:
                 freedom += d[e[0]] * d[e[1]]
             j += 1
